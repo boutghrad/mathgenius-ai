@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { useAuthStore } from '@/lib/auth-store'
 import { useAppStore } from '@/lib/app-store'
+import { useAuthStore } from '@/lib/auth-store'
 import { Sparkles, ArrowLeft, Loader2, Mail, Lock, User, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 export function AuthPage() {
@@ -18,59 +18,71 @@ export function AuthPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const { login, signup, demoLogin } = useAuthStore()
   const { setCurrentPage } = useAppStore()
+  const { setUser } = useAuthStore()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setSuccess(null)
-    setIsLoading(true)
 
     // Client-side validation
-    if (!email.includes('@')) {
-      setError('Please enter a valid email address')
-      setIsLoading(false)
+    if (!email.trim()) {
+      setError('Please enter your email address')
       return
     }
 
-    if (password.length < 3) {
+    if (!email.includes('@') || !email.includes('.')) {
+      setError('Please enter a valid email (e.g. you@example.com)')
+      return
+    }
+
+    if (!password || password.length < 3) {
       setError('Password must be at least 3 characters')
-      setIsLoading(false)
       return
     }
 
-    if (!isLogin && name.trim().length < 2) {
-      setError('Name must be at least 2 characters')
-      setIsLoading(false)
+    if (!isLogin && (!name || name.trim().length < 2)) {
+      setError('Please enter your name (at least 2 characters)')
       return
     }
+
+    setIsLoading(true)
 
     try {
-      if (isLogin) {
-        const err = await login(email, password)
-        if (err) {
-          setError(err)
-        } else {
-          setSuccess('Login successful! Redirecting...')
-          setTimeout(() => setCurrentPage('dashboard'), 600)
-        }
+      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup'
+      const body = isLogin
+        ? { email: email.trim().toLowerCase(), password }
+        : { email: email.trim().toLowerCase(), name: name.trim(), password }
+
+      console.log('[Auth] Sending request to:', endpoint, 'with:', { ...body, password: '***' })
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      const data = await res.json()
+      console.log('[Auth] Response:', res.status, data)
+
+      if (res.ok && data.user) {
+        setSuccess(isLogin ? 'Login successful!' : 'Account created successfully!')
+        setUser(data.user)
+        setTimeout(() => setCurrentPage('dashboard'), 500)
       } else {
-        const err = await signup(email, name, password)
-        if (err) {
-          setError(err)
-        } else {
-          setSuccess('Account created successfully! Redirecting...')
-          setTimeout(() => setCurrentPage('dashboard'), 600)
-        }
+        setError(data.error || (isLogin ? 'Invalid email or password' : 'Failed to create account'))
       }
+    } catch (err) {
+      console.error('[Auth] Network error:', err)
+      setError('Network error. Please check your connection and try again.')
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleDemo = () => {
-    demoLogin()
+    useAuthStore.getState().demoLogin()
     setCurrentPage('dashboard')
   }
 
@@ -194,7 +206,7 @@ export function AuthPage() {
               </p>
             ) : (
               <p className="text-xs text-gray-600 mt-3 text-center">
-                Already have an account? Switch to sign in.
+                Your email and password will be saved securely.
               </p>
             )}
 

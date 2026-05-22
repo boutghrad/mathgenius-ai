@@ -91,7 +91,7 @@ export function LandingPage() {
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white" onClick={() => setCurrentPage('signup')}>
-            Sign up
+            Log in
           </Button>
           <Button size="sm" onClick={handleGetStarted} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white border-0">
             Get Started

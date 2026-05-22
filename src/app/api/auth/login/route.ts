@@ -6,21 +6,21 @@ export async function POST(req: Request) {
     const { email, password } = await req.json()
 
     if (!email || !email.includes('@')) {
-      return NextResponse.json({ error: 'يرجى إدخال بريد إلكتروني صحيح' }, { status: 400 })
+      return NextResponse.json({ error: 'Please enter a valid email address' }, { status: 400 })
     }
 
     if (!password) {
-      return NextResponse.json({ error: 'يرجى إدخال كلمة المرور' }, { status: 400 })
+      return NextResponse.json({ error: 'Please enter your password' }, { status: 400 })
     }
 
     const user = await db.user.findUnique({ where: { email: email.toLowerCase().trim() } })
 
     if (!user) {
-      return NextResponse.json({ error: 'لا يوجد حساب بهذا البريد الإلكتروني. أنشئ حساباً جديداً أولاً.' }, { status: 401 })
+      return NextResponse.json({ error: 'No account found with this email. Please sign up first.' }, { status: 401 })
     }
 
     if (user.password && user.password !== password) {
-      return NextResponse.json({ error: 'كلمة المرور غير صحيحة' }, { status: 401 })
+      return NextResponse.json({ error: 'Incorrect password. Please try again.' }, { status: 401 })
     }
 
     return NextResponse.json({
@@ -28,6 +28,6 @@ export async function POST(req: Request) {
     })
   } catch (error) {
     console.error('Login error:', error)
-    return NextResponse.json({ error: 'حدث خطأ أثناء تسجيل الدخول. حاول مرة أخرى.' }, { status: 500 })
+    return NextResponse.json({ error: 'Login failed. Please try again.' }, { status: 500 })
   }
 }

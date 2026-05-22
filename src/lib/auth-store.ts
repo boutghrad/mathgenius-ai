@@ -36,14 +36,14 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ user: data.user, isAuthenticated: true, isLoading: false })
       } else {
         set({ isLoading: false })
-        throw new Error(data.error || 'البريد الإلكتروني أو كلمة المرور غير صحيحة')
+        throw new Error(data.error || 'Invalid email or password')
       }
     } catch (error: unknown) {
       set({ isLoading: false })
       if (error instanceof Error) {
         throw error
       }
-      throw new Error('فشل تسجيل الدخول. حاول مرة أخرى.')
+      throw new Error('Login failed. Please try again.')
     }
   },
 
@@ -60,14 +60,14 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ user: data.user, isAuthenticated: true, isLoading: false })
       } else {
         set({ isLoading: false })
-        throw new Error(data.error || 'فشل إنشاء الحساب')
+        throw new Error(data.error || 'Failed to create account')
       }
     } catch (error: unknown) {
       set({ isLoading: false })
       if (error instanceof Error) {
         throw error
       }
-      throw new Error('فشل إنشاء الحساب. حاول مرة أخرى.')
+      throw new Error('Signup failed. Please try again.')
     }
   },
 

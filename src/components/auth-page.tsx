@@ -30,23 +30,23 @@ export function AuthPage() {
     try {
       if (isLogin) {
         await login(email, password)
-        setSuccess('تم تسجيل الدخول بنجاح!')
+        setSuccess('Login successful!')
         setTimeout(() => setCurrentPage('dashboard'), 500)
       } else {
         if (password.length < 3) {
-          setError('كلمة المرور يجب أن تكون 3 أحرف على الأقل')
+          setError('Password must be at least 3 characters')
           setIsLoading(false)
           return
         }
         await signup(email, name, password)
-        setSuccess('تم إنشاء الحساب بنجاح!')
+        setSuccess('Account created successfully!')
         setTimeout(() => setCurrentPage('dashboard'), 500)
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message)
       } else {
-        setError(isLogin ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة' : 'فشل إنشاء الحساب')
+        setError(isLogin ? 'Invalid email or password' : 'Failed to create account')
       }
     } finally {
       setIsLoading(false)
@@ -73,7 +73,7 @@ export function AuthPage() {
           className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
-          العودة للرئيسية
+          Back to home
         </button>
 
         <Card className="glass-card">
@@ -83,10 +83,10 @@ export function AuthPage() {
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <h1 className="text-2xl font-bold">
-                {isLogin ? 'مرحباً بعودتك' : 'إنشاء حساب جديد'}
+                {isLogin ? 'Welcome back' : 'Create account'}
               </h1>
               <p className="text-gray-400 text-sm mt-1">
-                {isLogin ? 'سجّل الدخول إلى حسابك في MathGenius AI' : 'ابدأ حل المسائل الرياضية بالذكاء الاصطناعي'}
+                {isLogin ? 'Sign in to your MathGenius AI account' : 'Start solving math with AI today'}
               </p>
             </div>
 
@@ -117,13 +117,13 @@ export function AuthPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div className="space-y-2">
-                  <Label className="text-gray-400 text-xs">الاسم الكامل</Label>
+                  <Label className="text-gray-400 text-xs">Full Name</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                     <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="أدخل اسمك"
+                      placeholder="John Doe"
                       className="pl-10 bg-white/[0.03] border-white/10 focus:border-blue-500/50 text-white placeholder:text-gray-600"
                       required={!isLogin}
                       minLength={2}
@@ -133,7 +133,7 @@ export function AuthPage() {
               )}
 
               <div className="space-y-2">
-                <Label className="text-gray-400 text-xs">البريد الإلكتروني</Label>
+                <Label className="text-gray-400 text-xs">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <Input
@@ -148,7 +148,7 @@ export function AuthPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-gray-400 text-xs">كلمة المرور</Label>
+                <Label className="text-gray-400 text-xs">Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <Input
@@ -171,21 +171,21 @@ export function AuthPage() {
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  isLogin ? 'تسجيل الدخول' : 'إنشاء حساب'
+                  isLogin ? 'Sign In' : 'Create Account'
                 )}
               </Button>
             </form>
 
-            {/* Tip for login */}
+            {/* Help tip for login */}
             {isLogin && (
               <p className="text-xs text-gray-600 mt-3 text-center">
-                💡 يجب إنشاء حساب أولاً ثم تسجيل الدخول به
+                You need to create an account first before signing in
               </p>
             )}
 
             <div className="my-6 flex items-center gap-3">
               <div className="flex-1 h-px bg-white/10" />
-              <span className="text-xs text-gray-500">أو</span>
+              <span className="text-xs text-gray-500">or</span>
               <div className="flex-1 h-px bg-white/10" />
             </div>
 
@@ -195,16 +195,16 @@ export function AuthPage() {
               className="w-full border-white/10 text-gray-300 hover:bg-white/5 py-5"
             >
               <Sparkles className="w-4 h-4 mr-2 text-blue-400" />
-              تجربة الحساب التجريبي
+              Try Demo Account
             </Button>
 
             <p className="text-center text-sm text-gray-500 mt-6">
-              {isLogin ? 'ليس لديك حساب؟ ' : 'لديك حساب بالفعل؟ '}
+              {isLogin ? "Don't have an account? " : 'Already have an account? '}
               <button
                 onClick={() => { setIsLogin(!isLogin); setError(null); setSuccess(null) }}
                 className="text-blue-400 hover:underline"
               >
-                {isLogin ? 'إنشاء حساب' : 'تسجيل الدخول'}
+                {isLogin ? 'Sign up' : 'Sign in'}
               </button>
             </p>
           </CardContent>

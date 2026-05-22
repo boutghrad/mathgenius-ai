@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || ''
-
 export async function GET() {
+  const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID
+
   if (!GITHUB_CLIENT_ID) {
-    return NextResponse.json(
-      { error: 'GitHub OAuth is not configured. Please add GITHUB_CLIENT_ID to .env' },
-      { status: 500 }
+    console.error('[GitHub Auth] GITHUB_CLIENT_ID is not set in environment variables')
+    // Redirect back to auth page with error message instead of returning JSON
+    return NextResponse.redirect(
+      new URL('/?auth=error&message=GitHub+OAuth+is+not+configured.+Please+add+GITHUB_CLIENT_ID+to+.env', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
     )
   }
 

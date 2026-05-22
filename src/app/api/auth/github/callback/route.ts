@@ -1,17 +1,24 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || ''
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || ''
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 export async function GET(request: Request) {
   try {
+    const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID
+    const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET
+
+    if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+      console.error('[GitHub Auth] GitHub OAuth credentials not configured')
+      return NextResponse.redirect(new URL('/?auth=error&message=GitHub+OAuth+not+configured', BASE_URL))
+    }
+
     const { searchParams } = new URL(request.url)
     const code = searchParams.get('code')
     const state = searchParams.get('state')
 
     if (!code || !state) {
-      return NextResponse.redirect(new URL('/?auth=error&message=Missing+authorization+code', request.url))
+      return NextResponse.redirect(new URL('/?auth=error&message=Missing+authorization+code', BASE_URL))
     }
 
     // Verify state for CSRF protection
@@ -21,7 +28,8 @@ export async function GET(request: Request) {
       ?.split('=')[1]
 
     if (state !== cookieState) {
-      return NextResponse.redirect(new URL('/?auth=error&message=Invalid+state+parameter', request.url))
+      console.warn('[GitHub Auth] State mismatch - possible CSRF attack')
+      return NextResponse.redirect(new URL('/?auth=error&message=Invalid+state+parameter', BASE_URL))
     }
 
     // Exchange code for access token
@@ -40,9 +48,9 @@ export async function GET(request: Request) {
 
     const tokenData = await tokenResponse.json()
 
-    if (tokenData.error) {
-      console.error('[GitHub Auth] Token exchange error:', tokenData.error)
-      return NextResponse.redirect(new URL('/?auth=error&message=GitHub+authentication+failed', request.url))
+    if (tokenData.error || !tokenData.access_token) {
+      console.error('[GitHub Auth] Token exchange error:', tokenData.error || 'No access token received')
+      return NextResponse.redirect(new URL('/?auth=error&message=GitHub+authentication+failed', BASE_URL))
     }
 
     const accessToken = tokenData.access_token
@@ -59,21 +67,28 @@ export async function GET(request: Request) {
 
     if (!githubUser.id) {
       console.error('[GitHub Auth] Failed to get GitHub user profile')
-      return NextResponse.redirect(new URL('/?auth=error&message=Failed+to+get+GitHub+profile', request.url))
+      return NextResponse.redirect(new URL('/?auth=error&message=Failed+to+get+GitHub+profile', BASE_URL))
     }
 
     // Get GitHub user emails (primary email might be private)
-    const emailResponse = await fetch('https://api.github.com/user/emails', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: 'application/vnd.github.v3+json',
-      },
-    })
-
-    const emails = await emailResponse.json()
-    const primaryEmail = emails.find((e: { primary: boolean; verified: boolean }) => e.primary && e.verified)?.email
-      || githubUser.email
-      || `${githubUser.id}@github.com`
+    let primaryEmail = githubUser.email
+    try {
+      const emailResponse = await fetch('https://api.github.com/user/emails', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      })
+      const emails = await emailResponse.json()
+      if (Array.isArray(emails)) {
+        primaryEmail = emails.find((e: { primary: boolean; verified: boolean }) => e.primary && e.verified)?.email
+          || githubUser.email
+          || `${githubUser.id}@github.com`
+      }
+    } catch {
+      // If email fetch fails, use fallback
+      primaryEmail = primaryEmail || `${githubUser.id}@github.com`
+    }
 
     const githubId = String(githubUser.id)
     const avatarUrl = githubUser.avatar_url || null
@@ -139,7 +154,7 @@ export async function GET(request: Request) {
     // Encode user data and redirect to frontend with it
     const encodedUser = encodeURIComponent(JSON.stringify(userData))
     const response = NextResponse.redirect(
-      new URL(`/?auth=success&user=${encodedUser}`, request.url)
+      new URL(`/?auth=success&user=${encodedUser}`, BASE_URL)
     )
 
     // Clear the state cookie
@@ -154,6 +169,6 @@ export async function GET(request: Request) {
     return response
   } catch (error) {
     console.error('[GitHub Auth] Callback error:', error)
-    return NextResponse.redirect(new URL('/?auth=error&message=Server+error+during+authentication', request.url))
+    return NextResponse.redirect(new URL('/?auth=error&message=Server+error+during+authentication', BASE_URL))
   }
 }

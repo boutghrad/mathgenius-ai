@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -127,6 +127,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
         {user && (
           <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.02] ${collapsed ? 'justify-center' : ''}`}>
             <Avatar className="w-8 h-8 shrink-0">
+              {user.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
               <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white text-xs">
                 {user.name[0]}
               </AvatarFallback>
@@ -155,8 +156,34 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
 
 export function AppShell() {
   const { currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, toggleSidebar } = useAppStore()
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, setUser } = useAuthStore()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Handle GitHub OAuth callback on page load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const authStatus = params.get('auth')
+
+    if (authStatus === 'success') {
+      const userData = params.get('user')
+      if (userData) {
+        try {
+          const user = JSON.parse(decodeURIComponent(userData))
+          setUser(user)
+          setCurrentPage('dashboard')
+        } catch {
+          console.error('[Auth] Failed to parse GitHub OAuth user data')
+        }
+      }
+      // Clean URL
+      window.history.replaceState({}, '', '/')
+    } else if (authStatus === 'error') {
+      const message = params.get('message') || 'GitHub authentication failed'
+      console.error('[Auth] GitHub OAuth error:', message.replace(/\+/g, ' '))
+      // Clean URL
+      window.history.replaceState({}, '', '/')
+    }
+  }, [setUser, setCurrentPage])
 
   // Public pages (no sidebar)
   const isAuthPage = currentPage === 'login' || currentPage === 'signup'

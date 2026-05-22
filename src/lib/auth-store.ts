@@ -15,6 +15,7 @@ interface AuthState {
   setUser: (user: User) => void
   logout: () => void
   demoLogin: () => void
+  githubLogin: () => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -41,5 +42,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       },
       isAuthenticated: true,
     })
+  },
+
+  githubLogin: () => {
+    set({ isLoading: true })
+    // Redirect to GitHub OAuth
+    if (typeof window !== 'undefined') {
+      window.location.href = '/api/auth/github'
+    }
   },
 }))

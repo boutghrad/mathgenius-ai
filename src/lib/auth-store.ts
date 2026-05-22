@@ -32,15 +32,18 @@ export const useAuthStore = create<AuthState>((set) => ({
         body: JSON.stringify({ email, password }),
       })
       const data = await res.json()
-      if (data.user) {
+      if (res.ok && data.user) {
         set({ user: data.user, isAuthenticated: true, isLoading: false })
       } else {
         set({ isLoading: false })
-        throw new Error(data.error || 'Login failed')
+        throw new Error(data.error || 'البريد الإلكتروني أو كلمة المرور غير صحيحة')
       }
-    } catch {
+    } catch (error: unknown) {
       set({ isLoading: false })
-      throw new Error('Login failed')
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error('فشل تسجيل الدخول. حاول مرة أخرى.')
     }
   },
 
@@ -53,15 +56,18 @@ export const useAuthStore = create<AuthState>((set) => ({
         body: JSON.stringify({ email, name, password }),
       })
       const data = await res.json()
-      if (data.user) {
+      if (res.ok && data.user) {
         set({ user: data.user, isAuthenticated: true, isLoading: false })
       } else {
         set({ isLoading: false })
-        throw new Error(data.error || 'Signup failed')
+        throw new Error(data.error || 'فشل إنشاء الحساب')
       }
-    } catch {
+    } catch (error: unknown) {
       set({ isLoading: false })
-      throw new Error('Signup failed')
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error('فشل إنشاء الحساب. حاول مرة أخرى.')
     }
   },
 

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/lib/auth-store'
 import { useAppStore } from '@/lib/app-store'
-import { Sparkles, ArrowLeft, Loader2, Mail, Lock, User } from 'lucide-react'
+import { Sparkles, ArrowLeft, Loader2, Mail, Lock, User, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 export function AuthPage() {
   const [isLogin, setIsLogin] = useState(true)
@@ -17,23 +17,37 @@ export function AuthPage() {
   const [name, setName] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const { login, signup, demoLogin } = useAuthStore()
   const { setCurrentPage } = useAppStore()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setSuccess(null)
     setIsLoading(true)
 
     try {
       if (isLogin) {
         await login(email, password)
+        setSuccess('تم تسجيل الدخول بنجاح!')
+        setTimeout(() => setCurrentPage('dashboard'), 500)
       } else {
+        if (password.length < 3) {
+          setError('كلمة المرور يجب أن تكون 3 أحرف على الأقل')
+          setIsLoading(false)
+          return
+        }
         await signup(email, name, password)
+        setSuccess('تم إنشاء الحساب بنجاح!')
+        setTimeout(() => setCurrentPage('dashboard'), 500)
       }
-      setCurrentPage('dashboard')
-    } catch {
-      setError(isLogin ? 'Invalid email or password' : 'Failed to create account')
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError(isLogin ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة' : 'فشل إنشاء الحساب')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -59,7 +73,7 @@ export function AuthPage() {
           className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to home
+          العودة للرئيسية
         </button>
 
         <Card className="glass-card">
@@ -69,32 +83,57 @@ export function AuthPage() {
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <h1 className="text-2xl font-bold">
-                {isLogin ? 'Welcome back' : 'Create account'}
+                {isLogin ? 'مرحباً بعودتك' : 'إنشاء حساب جديد'}
               </h1>
               <p className="text-gray-400 text-sm mt-1">
-                {isLogin ? 'Sign in to your MathGenius AI account' : 'Start solving math with AI today'}
+                {isLogin ? 'سجّل الدخول إلى حسابك في MathGenius AI' : 'ابدأ حل المسائل الرياضية بالذكاء الاصطناعي'}
               </p>
             </div>
+
+            {/* Error Message */}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 p-3 mb-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
+              >
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {error}
+              </motion.div>
+            )}
+
+            {/* Success Message */}
+            {success && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 p-3 mb-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm"
+              >
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                {success}
+              </motion.div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div className="space-y-2">
-                  <Label className="text-gray-400 text-xs">Full Name</Label>
+                  <Label className="text-gray-400 text-xs">الاسم الكامل</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                     <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="John Doe"
+                      placeholder="أدخل اسمك"
                       className="pl-10 bg-white/[0.03] border-white/10 focus:border-blue-500/50 text-white placeholder:text-gray-600"
                       required={!isLogin}
+                      minLength={2}
                     />
                   </div>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label className="text-gray-400 text-xs">Email</Label>
+                <Label className="text-gray-400 text-xs">البريد الإلكتروني</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <Input
@@ -109,7 +148,7 @@ export function AuthPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-gray-400 text-xs">Password</Label>
+                <Label className="text-gray-400 text-xs">كلمة المرور</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <Input
@@ -119,13 +158,10 @@ export function AuthPage() {
                     placeholder="••••••••"
                     className="pl-10 bg-white/[0.03] border-white/10 focus:border-blue-500/50 text-white placeholder:text-gray-600"
                     required
+                    minLength={3}
                   />
                 </div>
               </div>
-
-              {error && (
-                <p className="text-red-400 text-sm text-center">{error}</p>
-              )}
 
               <Button
                 type="submit"
@@ -135,14 +171,21 @@ export function AuthPage() {
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  isLogin ? 'Sign In' : 'Create Account'
+                  isLogin ? 'تسجيل الدخول' : 'إنشاء حساب'
                 )}
               </Button>
             </form>
 
+            {/* Tip for login */}
+            {isLogin && (
+              <p className="text-xs text-gray-600 mt-3 text-center">
+                💡 يجب إنشاء حساب أولاً ثم تسجيل الدخول به
+              </p>
+            )}
+
             <div className="my-6 flex items-center gap-3">
               <div className="flex-1 h-px bg-white/10" />
-              <span className="text-xs text-gray-500">or</span>
+              <span className="text-xs text-gray-500">أو</span>
               <div className="flex-1 h-px bg-white/10" />
             </div>
 
@@ -152,16 +195,16 @@ export function AuthPage() {
               className="w-full border-white/10 text-gray-300 hover:bg-white/5 py-5"
             >
               <Sparkles className="w-4 h-4 mr-2 text-blue-400" />
-              Try Demo Account
+              تجربة الحساب التجريبي
             </Button>
 
             <p className="text-center text-sm text-gray-500 mt-6">
-              {isLogin ? "Don't have an account? " : 'Already have an account? '}
+              {isLogin ? 'ليس لديك حساب؟ ' : 'لديك حساب بالفعل؟ '}
               <button
-                onClick={() => { setIsLogin(!isLogin); setError(null) }}
+                onClick={() => { setIsLogin(!isLogin); setError(null); setSuccess(null) }}
                 className="text-blue-400 hover:underline"
               >
-                {isLogin ? 'Sign up' : 'Sign in'}
+                {isLogin ? 'إنشاء حساب' : 'تسجيل الدخول'}
               </button>
             </p>
           </CardContent>

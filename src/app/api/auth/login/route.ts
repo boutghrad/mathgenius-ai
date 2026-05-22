@@ -5,19 +5,22 @@ export async function POST(req: Request) {
   try {
     const { email, password } = await req.json()
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
+    if (!email || !email.includes('@')) {
+      return NextResponse.json({ error: 'يرجى إدخال بريد إلكتروني صحيح' }, { status: 400 })
     }
 
-    const user = await db.user.findUnique({ where: { email } })
+    if (!password) {
+      return NextResponse.json({ error: 'يرجى إدخال كلمة المرور' }, { status: 400 })
+    }
+
+    const user = await db.user.findUnique({ where: { email: email.toLowerCase().trim() } })
 
     if (!user) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+      return NextResponse.json({ error: 'لا يوجد حساب بهذا البريد الإلكتروني. أنشئ حساباً جديداً أولاً.' }, { status: 401 })
     }
 
-    // In production, compare hashed passwords. For demo, simple check.
     if (user.password && user.password !== password) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+      return NextResponse.json({ error: 'كلمة المرور غير صحيحة' }, { status: 401 })
     }
 
     return NextResponse.json({
@@ -25,6 +28,6 @@ export async function POST(req: Request) {
     })
   } catch (error) {
     console.error('Login error:', error)
-    return NextResponse.json({ error: 'Failed to login' }, { status: 500 })
+    return NextResponse.json({ error: 'حدث خطأ أثناء تسجيل الدخول. حاول مرة أخرى.' }, { status: 500 })
   }
 }

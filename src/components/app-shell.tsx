@@ -159,18 +159,31 @@ export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   // Public pages (no sidebar)
-  const isPublicPage = currentPage === 'landing' || currentPage === 'login' || currentPage === 'signup'
+  const isAuthPage = currentPage === 'login' || currentPage === 'signup'
 
-  if (isPublicPage && !isAuthenticated) {
+  if (isAuthPage && !isAuthenticated) {
     return (
       <>
-        {currentPage === 'login' || currentPage === 'signup' ? (
-          <AuthPage />
-        ) : currentPage === 'pricing' ? (
-          <PricingPage />
-        ) : (
-          <LandingPage />
-        )}
+        <AuthPage />
+        <AIChat />
+      </>
+    )
+  }
+
+  if (currentPage === 'landing' && !isAuthenticated) {
+    return (
+      <>
+        <LandingPage />
+        <AIChat />
+      </>
+    )
+  }
+
+  // If not authenticated and trying to access protected page, redirect to landing
+  if (!isAuthenticated) {
+    return (
+      <>
+        <LandingPage />
         <AIChat />
       </>
     )

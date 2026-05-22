@@ -5,19 +5,27 @@ export async function POST(req: Request) {
   try {
     const { email, name, password } = await req.json()
 
-    if (!email || !name || !password) {
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
+    if (!email || !email.includes('@')) {
+      return NextResponse.json({ error: 'يرجى إدخال بريد إلكتروني صحيح' }, { status: 400 })
+    }
+
+    if (!name || name.trim().length < 2) {
+      return NextResponse.json({ error: 'يرجى إدخال اسم صحيح (حرفين على الأقل)' }, { status: 400 })
+    }
+
+    if (!password || password.length < 3) {
+      return NextResponse.json({ error: 'كلمة المرور يجب أن تكون 3 أحرف على الأقل' }, { status: 400 })
     }
 
     const existing = await db.user.findUnique({ where: { email } })
     if (existing) {
-      return NextResponse.json({ error: 'Email already exists' }, { status: 409 })
+      return NextResponse.json({ error: 'هذا البريد الإلكتروني مسجل بالفعل. حاول تسجيل الدخول.' }, { status: 409 })
     }
 
     const user = await db.user.create({
       data: {
-        email,
-        name,
+        email: email.toLowerCase().trim(),
+        name: name.trim(),
         password,
         plan: 'free',
       },
@@ -28,6 +36,6 @@ export async function POST(req: Request) {
     })
   } catch (error) {
     console.error('Signup error:', error)
-    return NextResponse.json({ error: 'Failed to create account' }, { status: 500 })
+    return NextResponse.json({ error: 'حدث خطأ أثناء إنشاء الحساب. حاول مرة أخرى.' }, { status: 500 })
   }
 }

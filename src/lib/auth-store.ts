@@ -12,8 +12,8 @@ interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
-  signup: (email: string, name: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<string | null>
+  signup: (email: string, name: string, password: string) => Promise<string | null>
   logout: () => void
   demoLogin: () => void
 }
@@ -23,7 +23,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isLoading: false,
 
-  login: async (email: string, password: string) => {
+  login: async (email: string, password: string): Promise<string | null> => {
     set({ isLoading: true })
     try {
       const res = await fetch('/api/auth/login', {
@@ -32,22 +32,21 @@ export const useAuthStore = create<AuthState>((set) => ({
         body: JSON.stringify({ email, password }),
       })
       const data = await res.json()
+
       if (res.ok && data.user) {
         set({ user: data.user, isAuthenticated: true, isLoading: false })
-      } else {
-        set({ isLoading: false })
-        throw new Error(data.error || 'Invalid email or password')
+        return null // success, no error
       }
-    } catch (error: unknown) {
+
       set({ isLoading: false })
-      if (error instanceof Error) {
-        throw error
-      }
-      throw new Error('Login failed. Please try again.')
+      return data.error || 'Invalid email or password'
+    } catch {
+      set({ isLoading: false })
+      return 'Network error. Please check your connection and try again.'
     }
   },
 
-  signup: async (email: string, name: string, password: string) => {
+  signup: async (email: string, name: string, password: string): Promise<string | null> => {
     set({ isLoading: true })
     try {
       const res = await fetch('/api/auth/signup', {
@@ -56,18 +55,17 @@ export const useAuthStore = create<AuthState>((set) => ({
         body: JSON.stringify({ email, name, password }),
       })
       const data = await res.json()
+
       if (res.ok && data.user) {
         set({ user: data.user, isAuthenticated: true, isLoading: false })
-      } else {
-        set({ isLoading: false })
-        throw new Error(data.error || 'Failed to create account')
+        return null // success, no error
       }
-    } catch (error: unknown) {
+
       set({ isLoading: false })
-      if (error instanceof Error) {
-        throw error
-      }
-      throw new Error('Signup failed. Please try again.')
+      return data.error || 'Failed to create account'
+    } catch {
+      set({ isLoading: false })
+      return 'Network error. Please check your connection and try again.'
     }
   },
 

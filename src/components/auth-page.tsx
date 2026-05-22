@@ -27,26 +27,42 @@ export function AuthPage() {
     setSuccess(null)
     setIsLoading(true)
 
+    // Client-side validation
+    if (!email.includes('@')) {
+      setError('Please enter a valid email address')
+      setIsLoading(false)
+      return
+    }
+
+    if (password.length < 3) {
+      setError('Password must be at least 3 characters')
+      setIsLoading(false)
+      return
+    }
+
+    if (!isLogin && name.trim().length < 2) {
+      setError('Name must be at least 2 characters')
+      setIsLoading(false)
+      return
+    }
+
     try {
       if (isLogin) {
-        await login(email, password)
-        setSuccess('Login successful!')
-        setTimeout(() => setCurrentPage('dashboard'), 500)
-      } else {
-        if (password.length < 3) {
-          setError('Password must be at least 3 characters')
-          setIsLoading(false)
-          return
+        const err = await login(email, password)
+        if (err) {
+          setError(err)
+        } else {
+          setSuccess('Login successful! Redirecting...')
+          setTimeout(() => setCurrentPage('dashboard'), 600)
         }
-        await signup(email, name, password)
-        setSuccess('Account created successfully!')
-        setTimeout(() => setCurrentPage('dashboard'), 500)
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message)
       } else {
-        setError(isLogin ? 'Invalid email or password' : 'Failed to create account')
+        const err = await signup(email, name, password)
+        if (err) {
+          setError(err)
+        } else {
+          setSuccess('Account created successfully! Redirecting...')
+          setTimeout(() => setCurrentPage('dashboard'), 600)
+        }
       }
     } finally {
       setIsLoading(false)
@@ -95,10 +111,10 @@ export function AuthPage() {
               <motion.div
                 initial={{ opacity: 0, y: -5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 p-3 mb-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
+                className="flex items-start gap-2 p-3 mb-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
               >
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                {error}
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{error}</span>
               </motion.div>
             )}
 
@@ -125,8 +141,6 @@ export function AuthPage() {
                       onChange={(e) => setName(e.target.value)}
                       placeholder="John Doe"
                       className="pl-10 bg-white/[0.03] border-white/10 focus:border-blue-500/50 text-white placeholder:text-gray-600"
-                      required={!isLogin}
-                      minLength={2}
                     />
                   </div>
                 </div>
@@ -142,7 +156,6 @@ export function AuthPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     className="pl-10 bg-white/[0.03] border-white/10 focus:border-blue-500/50 text-white placeholder:text-gray-600"
-                    required
                   />
                 </div>
               </div>
@@ -155,10 +168,8 @@ export function AuthPage() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="Min 3 characters"
                     className="pl-10 bg-white/[0.03] border-white/10 focus:border-blue-500/50 text-white placeholder:text-gray-600"
-                    required
-                    minLength={3}
                   />
                 </div>
               </div>
@@ -176,10 +187,14 @@ export function AuthPage() {
               </Button>
             </form>
 
-            {/* Help tip for login */}
-            {isLogin && (
+            {/* Help tips */}
+            {isLogin ? (
               <p className="text-xs text-gray-600 mt-3 text-center">
-                You need to create an account first before signing in
+                No account yet? Create one first, then sign in.
+              </p>
+            ) : (
+              <p className="text-xs text-gray-600 mt-3 text-center">
+                Already have an account? Switch to sign in.
               </p>
             )}
 
@@ -195,14 +210,14 @@ export function AuthPage() {
               className="w-full border-white/10 text-gray-300 hover:bg-white/5 py-5"
             >
               <Sparkles className="w-4 h-4 mr-2 text-blue-400" />
-              Try Demo Account
+              Try Demo Account (Instant Access)
             </Button>
 
             <p className="text-center text-sm text-gray-500 mt-6">
               {isLogin ? "Don't have an account? " : 'Already have an account? '}
               <button
                 onClick={() => { setIsLogin(!isLogin); setError(null); setSuccess(null) }}
-                className="text-blue-400 hover:underline"
+                className="text-blue-400 hover:underline font-medium"
               >
                 {isLogin ? 'Sign up' : 'Sign in'}
               </button>
